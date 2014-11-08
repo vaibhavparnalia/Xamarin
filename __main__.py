@@ -3,12 +3,12 @@ import urllib.request
 page = urllib.request.urlopen('http://www.imdb.com/showtimes/location')
 page_content = page.read()
 
-with open("imdb.html", "wb") as file:
+with open("html_cache/now_showing.html", "wb") as file:
     file.write(page_content)
 file.close()
 
 movieId = []
-with open("imdb.html", "r", encoding="utf8") as file:
+with open("html_cache/now_showing.html", "r", encoding="utf8") as file:
     for line in iter(file):
         if "/showtimes/title/" in line:
             if "tt" in line:
