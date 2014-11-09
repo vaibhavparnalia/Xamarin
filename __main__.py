@@ -42,7 +42,7 @@ class movie:
         self.title = ""
         self.runTime = 0
         self.genre = []
-        self.releaseDate = "0000-01-01"
+        self.releaseDate = 0
         self.cast = []
         
 def HTMLResponse(url):
@@ -75,7 +75,8 @@ def initDatabase(movieList):
     return nowShowing
 
 def convertDate(myDate):
-    return datetime.date(int(myDate.split("-")[0]), int(myDate.split("-")[1]), int(myDate.split("-")[2])).strftime("%d %B %Y")
+    YYYY, MM, DD = (myDate.split("-"))
+    return datetime.date(int(YYYY), int(MM), int(DD)).strftime("%d %B %Y")
 
 def getGenreStr(genreList):
     genreStr = ""
@@ -84,9 +85,7 @@ def getGenreStr(genreList):
     return genreStr[:-2]
 
 def getRunTime(runTime):
-    if runTime == 0:
-        runTime = 0
-    else:
+    if runTime:
         for char in runTime:
             if char.isdigit():
                 indexStart = runTime.index(char)
@@ -99,8 +98,16 @@ def getRunTime(runTime):
 def printMovieInfoDetailed(nowShowing):
 
     for i in range(0, len(nowShowing)):
-        print(" "*len(str(len(nowShowing))) + "{}. {}".format(i+1, nowShowing[i].title))
-        print("    RunTime: {} mins".format(nowShowing[i].runTime))
+        if len(nowShowing) < 10:
+            print("{}. {}".format(i+1, nowShowing[i].title))
+        elif len(nowShowing) < 100:
+            print("{:2d}. {}".format(i+1, nowShowing[i].title))
+        else:
+            print("{:3d}. {}".format(i+1, nowShowing[i].title))
+        if nowShowing[i].runTime:
+            print("    RunTime: {} mins".format(nowShowing[i].runTime))
+        else:
+            print("    RunTime: N/A")
         print("    Genre: ", end="")
         genreStr = getGenreStr(nowShowing[i].genre)
         print("{}".format(genreStr))
@@ -127,18 +134,22 @@ def movie_setParameters(nowShowing):
                 if "og:title" in line:
                     parser.feed(line)
                 #Parses other data
+
                 if "class=\"infobar\"" in line:
                     parsingOn = True
                 if parsingOn:
                     parser.feed(line)
                     if "</div>" in line:
                         parsingOn = False
+
             movie.title = parser.parsedAttrs['title']          
             if 'dateTime' in parser.parsedAttrs: 
                 movie.runTime = getRunTime(parser.parsedAttrs['dateTime'])
-            for genreType in parser.parsedAttrs['genre']:
-                movie.genre.append(genreType[genreType.index("genre")+6:genreType.index("?")])
-            movie.releaseDate = parser.parsedAttrs['datePublished']
+            if 'genre' in parser.parsedAttrs:
+                for genreType in parser.parsedAttrs['genre']:
+                    movie.genre.append(genreType[genreType.index("genre")+6:genreType.index("?")])
+            if 'datePublished' in parser.parsedAttrs:
+                movie.releaseDate = parser.parsedAttrs['datePublished']
 
     printMovieInfoDetailed(nowShowing)         
 
