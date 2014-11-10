@@ -25,6 +25,8 @@ class MyHTMLParser(HTMLParser):
             self.parsedAttrs["datePublished"] = attrs[1][1]
         if tag == "meta" and "og:title" in attrs[0][1]:
             self.parsedAttrs['title'] = attrs[1][1]
+        if tag == "time" and "birthDate" in attrs[1][1]:
+            self.parsedAttrs['birthDate'] = attrs[0][1]
 
     def handle_endtag(self, tag):
         #print("End tag  :", tag)
@@ -76,7 +78,14 @@ def initDatabase(movieList):
 
 def convertDate(myDate):
     YYYY, MM, DD = (myDate.split("-"))
-    return datetime.date(int(YYYY), int(MM), int(DD)).strftime("%d %B %Y")
+    YYYY, MM, DD = int(YYYY), int(MM), int(DD)
+    if MM>0 and DD>0:
+        return datetime.date(YYYY, MM, DD).strftime("%d %B %Y")
+    else:
+        if YYYY:
+            return str(YYYY)
+        else:
+            return myDate
 
 def getGenreStr(genreList):
     genreStr = ""
@@ -96,7 +105,28 @@ def getRunTime(runTime):
         return int(runTime[indexStart:indexEnd])
 
 def printMovieInfoDetailed(nowShowing):
-
+    print("\n")
+    for counter, movie in enumerate(nowShowing):
+        if len(nowShowing) < 10:
+            print("{}. {}".format(counter+1, movie.title))
+        elif len(nowShowing) < 100:
+            print("{:2d}. {}".format(counter+1, movie.title))
+        else:
+            print("{:3d}. {}".format(counter+1, movie.title))
+        if movie.runTime:
+            print("    RunTime: {} mins".format(movie.runTime))
+        else:
+            print("    RunTime: N/A")
+        print("    Genre: ", end="")
+        genreStr = getGenreStr(movie.genre)
+        print("{}".format(genreStr))
+        dateStr = convertDate(movie.releaseDate)
+        print("    Date Released: {}".format(dateStr))
+        print("    Cast List:")
+        for cast in movie.cast:
+            if cast[1]:
+                print("        {}: {}".format(cast[0], convertDate(cast[1])))
+    """
     for i in range(0, len(nowShowing)):
         if len(nowShowing) < 10:
             print("{}. {}".format(i+1, nowShowing[i].title))
@@ -113,13 +143,69 @@ def printMovieInfoDetailed(nowShowing):
         print("{}".format(genreStr))
         dateStr = convertDate(nowShowing[i].releaseDate)
         print("    Date Released: {}".format(dateStr))
+        print("    Cast List:")
+        for cast in nowShowing[i].cast:
+            if cast[1]:
+                print("        {}: {}".format(cast[0], convertDate(cast[1])))
+                """
+
+def getCastInfo(nameID):
+    imdb = "http://www.imdb.com"
+    #print("  Querying castID {}".format(nameID))
+    parser = MyHTMLParser()
+    page_content = HTMLResponse(imdb + "/name/" + nameID + "/")
+    with open("html_cache/"+nameID+".html", "wb") as file:
+        file.write(page_content)
+    file.close()
+
+    with open("html_cache/"+nameID+".html", "r", encoding='utf8') as file:
+        for line in iter(file):
+            if "og:title" in line:
+                parser.feed(line)
+            if "birthDate" in line:
+                parser.feed(line)
+                break
+            if parseBreaker_birthDate in line:
+                break
+    if "title" in parser.parsedAttrs:
+        name = parser.parsedAttrs["title"]
+    if "birthDate" in parser.parsedAttrs:
+        birthDate = parser.parsedAttrs["birthDate"]
+    else:
+        birthDate = None
+    return (name, birthDate)
+
+def getAllCreditedCasts(movieID):
+    #print(moviePageURL+movieID+fullcreditsExtn)
+    print("  Querying all credited casts..please wait..")
+    imdb = "http://www.imdb.com"
+    page_content = HTMLResponse(moviePageURL+movieID+fullcreditsExtn)
+    cast = []
+
+    with open("html_cache/"+movieID+"_full_credits.html", "wb") as file:
+        file.write(page_content)
+    file.close()
+
+    with open("html_cache/"+movieID+"_full_credits.html", "r", encoding='utf8') as file:
+        parser = MyHTMLParser()
+        parsingOn = False
+        for line in iter(file):
+            if "?ref_=ttfc_fc_cl_i" in line:
+                #I prefer to do this in single line
+                nameID = (line[line.index("name")+5:line.index("name")+5+line[line.index("name")+5:].index("/")])
+                cast.append(getCastInfo(nameID))
+                #age = getCastInfo(nameID)
+                #print(name, age)
+            elif parseBreaker_uncreditedCast in line:
+                break
+    return cast
 
 def movie_setParameters(nowShowing):
     print("Found {} movies in theaters..".format(len(nowShowing)))
     #print([movie.id for movie in nowShowing])
 
     for movie in nowShowing:
-        print("Querying {}".format(movie.id))
+        print("Querying movie# {}".format(movie.id))
         page_content = HTMLResponse(moviePageURL+movie.id)
 
         with open("html_cache/"+movie.id+".html", "wb") as file:
@@ -134,13 +220,12 @@ def movie_setParameters(nowShowing):
                 if "og:title" in line:
                     parser.feed(line)
                 #Parses other data
-
                 if "class=\"infobar\"" in line:
                     parsingOn = True
                 if parsingOn:
                     parser.feed(line)
                     if "</div>" in line:
-                        parsingOn = False
+                        break
 
             movie.title = parser.parsedAttrs['title']          
             if 'dateTime' in parser.parsedAttrs: 
@@ -151,17 +236,21 @@ def movie_setParameters(nowShowing):
             if 'datePublished' in parser.parsedAttrs:
                 movie.releaseDate = parser.parsedAttrs['datePublished']
 
-    printMovieInfoDetailed(nowShowing)         
+        movie.cast = getAllCreditedCasts(movie.id)
 
-
+    printMovieInfoDetailed(nowShowing)
+    return nowShowing
+    
 def createDatabase(movieList):
     nowShowing = initDatabase(movieList)
-    movie_setParameters(nowShowing)
+    nowShowing = movie_setParameters(nowShowing)
+    return nowShowing
 
 if __name__ == "__main__":
-    movieList = getNowShowing()
-    createDatabase(movieList)
+    #movieList = getNowShowing()
+    #createDatabase(movieList)
 
     """Testing small list of movies, no parsing nowShowingURL"""
-    #movieList = ['tt2713180', 'tt0816692']
-    #createDatabase(movieList)
+    movieList = ['tt2713180', 'tt0816692']
+    nowShowing = createDatabase(movieList)
+    #getAllCreditedCasts('tt2713180')
