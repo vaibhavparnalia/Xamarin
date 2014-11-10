@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import datetime
 import urllib.request
@@ -52,7 +53,15 @@ class movie:
         self.genre = []
         self.releaseDate = 0
         self.cast = []
-        
+
+#http://stackoverflow.com/questions/11325019/output-on-the-console-and-file-using-python
+class Tee(object):
+    def __init__(self, *fileName):
+        self.file = fileName
+    def write(self, obj):
+        for f in self.file:
+            f.write(obj)
+
 def HTMLResponse(url):
     try:
         page = urllib.request.urlopen(url)
@@ -60,21 +69,34 @@ def HTMLResponse(url):
         print(e.strerror)
     return page.read()
 
-def filterMovieID(file):
+def filterMovieID(fileName, method):
     movieID = []
-    with open(file, "r", encoding="utf8") as file:
-        for line in iter(file):
-            if "/showtimes/title/" in line:
-                if "tt" in line:
-                    indexStart = line.index("tt")
-                    indexEnd = indexStart + line[indexStart:].index('/')
-                    if line[indexStart:indexEnd] not in movieID:
-                        movieID.append(line[indexStart:indexEnd])
-            if "location-display" in line:
-                parser = MyHTMLParser()
-                parser.feed(line)
-    #print(parser.recData)
-    print("{} movies currently running in {}\n".format(len(movieID), parser.recData[0]))
+    if method == "getNowShowing":
+        with open(fileName, "r", encoding="utf8") as file:
+            for line in iter(file):
+                if "/showtimes/title/" in line:
+                    if "tt" in line:
+                        indexStart = line.index("tt")
+                        indexEnd = indexStart + line[indexStart:].index('/')
+                        if line[indexStart:indexEnd] not in movieID:
+                            movieID.append(line[indexStart:indexEnd])
+                if "location-display" in line:
+                    parser = MyHTMLParser()
+                    parser.feed(line)
+            print("{} movies currently running in {} within 30 miles\n".format(len(movieID), parser.recData[0]))
+    elif method == "getTopTen":
+        with open(fileName, "r", encoding="utf8") as file:
+            startRecord = False
+            for line in iter(file):
+                if parseStarter_boxOfficeTopTen in line:
+                    startRecord = True
+                if startRecord and "?ref_=inth_ov_i" in line:
+                    if "tt" in line:
+                        indexStart = line.index("tt")
+                        indexEnd = indexStart + line[indexStart:].index('/')
+                        if line[indexStart:indexEnd] not in movieID:
+                            movieID.append(line[indexStart:indexEnd])
+            print("Box Office - Top Ten Movies\n")
     return movieID
     
 def cacheCheck(path, fileName):
@@ -87,7 +109,15 @@ def getNowShowing():
         file.write(page_content)
     file.close()
 
-    return filterMovieID("html_cache/now_showing.html")
+    return filterMovieID("html_cache/now_showing.html", "getNowShowing")
+
+def getTopTen():
+    page_content = HTMLResponse(topTenURL)
+    with open("html_cache/top_ten.html", "wb") as file:
+        file.write(page_content)
+    file.close()
+
+    return filterMovieID("html_cache/top_ten.html", "getTopTen")    
 
 def initDatabase(movieList):
     nowShowing = []
@@ -146,6 +176,13 @@ def getCastAverageAge(castList, releaseDate):
         return 0
 
 def printMovieInfoDetailed(nowShowing):
+    #stdout = sys.stdout
+    #sys.stdout = open('output.txt', 'w')
+
+    f = open('output.txt', 'w')
+    stdout = sys.stdout
+    sys.stdout = Tee(sys.stdout, f)
+
     print("\n")
     for counter, movie in enumerate(nowShowing):
         if len(nowShowing) < 10:
@@ -172,7 +209,8 @@ def printMovieInfoDetailed(nowShowing):
             print("    Cast List:")
         for cast in movie.cast:
             if cast[1]:
-                print("        {:<20s}: {:>10s}".format(cast[0], convertDate(cast[1])))
+                print("        {:<20s}: {:<20s}".format(cast[0], convertDate(cast[1])))
+    sys.stdout = stdout
 
 def getCastInfo(nameID):
     imdb = "http://www.imdb.com"
@@ -267,7 +305,7 @@ def movie_setParameters(nowShowing):
 
         movie.cast = getAllCreditedCasts(movie.id)
 
-    printMovieInfoDetailed(nowShowing)
+    
     return nowShowing
     
 def createDatabase(movieList):
@@ -281,9 +319,23 @@ if __name__ == "__main__":
         os.mkdir("html_cache")
     if not os.path.exists("html_cache/cast"):
         os.mkdir("html_cache/cast")
-    movieList = getNowShowing()
+
+    while True:
+        try:
+            whatMovies = int(input("1. Top Ten Movie\n2. All Now Showing Nearby\n"))
+            if whatMovies == 1 or whatMovies ==2:
+                break
+            else:
+                print("Please input a valid choice..")
+        except ValueError: print("Please input a valid choice..")
+
+    if whatMovies == 1:
+        movieList = getTopTen()
+    else:
+        movieList = getNowShowing()
     nowShowing = createDatabase(movieList)
-    
+    endTime = time.time()
+    printMovieInfoDetailed(nowShowing)
 
     """Testing small list of movies, skip parsing nowShowingURL"""
     #movieList = ['tt2713180']
@@ -291,5 +343,4 @@ if __name__ == "__main__":
     #getAllCreditedCasts('tt2713180')
     """--------------------------------------------------------"""
 
-
-    print("Result generated in {:.2f} seconds".format(time.time()-startTime))
+    print("Result generated in {:.2f} seconds".format(endTime-startTime))
