@@ -314,7 +314,6 @@ def createDatabase(movieList):
     return nowShowing
 
 if __name__ == "__main__":
-    startTime = time.time()
     if not os.path.exists("html_cache"):
         os.mkdir("html_cache")
     if not os.path.exists("html_cache/cast"):
@@ -328,7 +327,7 @@ if __name__ == "__main__":
             else:
                 print("Please input a valid choice..")
         except ValueError: print("Please input a valid choice..")
-
+    startTime = time.time()
     if whatMovies == 1:
         movieList = getTopTen()
     else:
