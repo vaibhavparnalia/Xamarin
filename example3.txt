@@ -1,0 +1,104 @@
+
+---------------   First Run  ------------------------
+
+Querying movie# tt2713180
+  Querying all credited casts..
+  Querying cast# nm0000093
+  Querying cast# nm0479471
+  Querying cast# nm0503567
+  Querying cast# nm0671567
+  Querying cast# nm1256532
+  Querying cast# nm1747924
+  Querying cast# nm0377034
+  Querying cast# nm5244059
+  Querying cast# nm1882152
+  Querying cast# nm0005042
+  Querying cast# nm1671512
+  Querying cast# nm2736690
+  Querying cast# nm2207222
+  Querying cast# nm1736605
+  Querying cast# nm0079418
+  Querying cast# nm2598189
+  Querying cast# nm2256122
+  Querying cast# nm1465245
+  Querying cast# nm3025293
+  Querying cast# nm6827280
+  Querying cast# nm2283244
+  Querying cast# nm4964567
+  Querying cast# nm0192838
+  Querying cast# nm1827142
+  Querying cast# nm1036127
+  Querying cast# nm4093657
+  Querying cast# nm3753505
+  Querying cast# nm2757852
+  Querying cast# nm2706152
+  Querying cast# nm6827281
+  Querying cast# nm5994128
+  Querying cast# nm6528719
+  Querying cast# nm6827282
+  Querying cast# nm3145308
+  Querying cast# nm2400472
+  Querying cast# nm3095001
+  Querying cast# nm2968738
+  Querying cast# nm6827283
+  Querying cast# nm6827284
+  Querying cast# nm6827285
+  Querying cast# nm6827286
+  Querying cast# nm6827287
+  Querying cast# nm6827288
+  Querying cast# nm6827289
+  Querying cast# nm4224278
+
+
+1. Fury (2014)
+    RunTime: 134 mins
+    Genre: Action, Drama, War
+    Date Released: 17 October 2014
+    Cast Average Age(when released): 35 years
+    Cast List:
+        Brad Pitt           : 18 December 1963
+        Shia LaBeouf        : 11 June 1986
+        Logan Lerman        : 19 January 1992
+        Michael Peña        : 13 January 1976
+        Jon Bernthal        : 20 September 1977
+        Jim Parrack         : 08 February 1981
+        Brad William Henke  : 10 April 1966
+        Xavier Samuel       : 10 December 1983
+        Jason Isaacs        : 06 June 1963
+        Anamaria Marinca    : 01 April 1978
+        Alicia von Rittberg : 10 December 1993
+        Scott Eastwood      : 21 March 1986
+        Daniel Betts        :       1970
+        Marek Oravec        : 27 December 1983
+        Branko Tomovic      : 17 June 1980
+Result generated in 30.56 seconds
+
+
+------------------------  Second run   --------------------------------
+
+>>> ================================ RESTART ================================
+>>> 
+
+
+1. Fury (2014)
+    RunTime: 134 mins
+    Genre: Action, Drama, War
+    Date Released: 17 October 2014
+    Cast Average Age(when released): 35 years
+    Cast List:
+        Brad Pitt           : 18 December 1963
+        Shia LaBeouf        : 11 June 1986
+        Logan Lerman        : 19 January 1992
+        Michael Peña        : 13 January 1976
+        Jon Bernthal        : 20 September 1977
+        Jim Parrack         : 08 February 1981
+        Brad William Henke  : 10 April 1966
+        Xavier Samuel       : 10 December 1983
+        Jason Isaacs        : 06 June 1963
+        Anamaria Marinca    : 01 April 1978
+        Alicia von Rittberg : 10 December 1993
+        Scott Eastwood      : 21 March 1986
+        Daniel Betts        :       1970
+        Marek Oravec        : 27 December 1983
+        Branko Tomovic      : 17 June 1980
+Result generated in 0.15 seconds

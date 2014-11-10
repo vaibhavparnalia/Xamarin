@@ -9,6 +9,8 @@ class MyHTMLParser(HTMLParser):
     def __init__(self):
         #http://stackoverflow.com/questions/3276040/how-can-i-use-the-python-htmlparser-library-to-extract-data-from-a-specific-div
         HTMLParser.__init__(self)
+        self.scanData = 0
+        self.recData = []
         self.parsedAttrs = {}
         self.parsedAttrs["genre"] = []
 
@@ -26,12 +28,17 @@ class MyHTMLParser(HTMLParser):
             self.parsedAttrs['title'] = attrs[1][1]
         if tag == "time" and "birthDate" in attrs[1][1]:
             self.parsedAttrs['birthDate'] = attrs[0][1]
+        if tag == "span" and "location-display" in attrs[0][1]:
+            self.scanData = 1
 
     def handle_endtag(self, tag):
         #print("End tag  :", tag)
         pass
     def handle_data(self, data):
         #print("Data     :", data)
+        if self.scanData:
+            self.recData.append(data)
+        self.scanData = 0
         pass
     def handle_comment(self, data):
         #print("Comment  :", data)
@@ -47,7 +54,10 @@ class movie:
         self.cast = []
         
 def HTMLResponse(url):
-    page = urllib.request.urlopen(url)
+    try:
+        page = urllib.request.urlopen(url)
+    except urllib.error.URLError as e:
+        print(e.strerror)
     return page.read()
 
 def filterMovieID(file):
@@ -60,6 +70,11 @@ def filterMovieID(file):
                     indexEnd = indexStart + line[indexStart:].index('/')
                     if line[indexStart:indexEnd] not in movieID:
                         movieID.append(line[indexStart:indexEnd])
+            if "location-display" in line:
+                parser = MyHTMLParser()
+                parser.feed(line)
+    #print(parser.recData)
+    print("{} movies currently running in {}\n".format(len(movieID), parser.recData[0]))
     return movieID
     
 def cacheCheck(path, fileName):
@@ -161,9 +176,9 @@ def printMovieInfoDetailed(nowShowing):
 
 def getCastInfo(nameID):
     imdb = "http://www.imdb.com"
-    #print("  Querying castID {}".format(nameID))
     
     if not cacheCheck(os.path.join("html_cache", "cast"), str(nameID)+str(".html")):
+        print("  Querying cast# {}".format(nameID))
         page_content = HTMLResponse(imdb + "/name/" + nameID + "/")
         with open("html_cache/cast/"+nameID+".html", "wb") as file:
             file.write(page_content)
@@ -193,7 +208,7 @@ def getAllCreditedCasts(movieID):
     cast = []
 
     if not cacheCheck("html_cache", str(movieID)+str("_full_credits.html")):
-        print("  Querying all credited casts..")
+        print("  Querying credited casts not in cache..")
         page_content = HTMLResponse(moviePageURL+movieID+fullcreditsExtn)
 
         with open("html_cache/"+movieID+"_full_credits.html", "wb") as file:
@@ -210,22 +225,21 @@ def getAllCreditedCasts(movieID):
                 cast.append(getCastInfo(nameID))
             elif parseBreaker_uncreditedCast in line:
                 break
+            elif parseBreaker_characterPage in line:
+                break
     return cast
 
 def movie_setParameters(nowShowing):
-    print("Found {} movies in theaters..".format(len(nowShowing)))
     #print([movie.id for movie in nowShowing])
 
-    for movie in nowShowing:
+    for counter, movie in enumerate(nowShowing):
         if not cacheCheck("html_cache", str(movie.id)+str(".html")):
-            print("Querying movie# {}".format(movie.id))
+            print("Querying movie({}/{})# {}".format(counter+1, len(nowShowing), movie.id))
             page_content = HTMLResponse(moviePageURL+movie.id)
 
             with open("html_cache/"+movie.id+".html", "wb") as file:
                 file.write(page_content)
             file.close()
-        else:
-            print("skipped")
 
         with open("html_cache/"+movie.id+".html", "r", encoding='utf8') as file:
             parser = MyHTMLParser()
@@ -262,20 +276,20 @@ def createDatabase(movieList):
     return nowShowing
 
 if __name__ == "__main__":
+    startTime = time.time()
     if not os.path.exists("html_cache"):
         os.mkdir("html_cache")
     if not os.path.exists("html_cache/cast"):
         os.mkdir("html_cache/cast")
-    startTime = time.time()
     movieList = getNowShowing()
     nowShowing = createDatabase(movieList)
     
 
-    """Testing small list of movies, no parsing nowShowingURL"""
-    #movieList = ['tt2713180', 'tt0816692']
+    """Testing small list of movies, skip parsing nowShowingURL"""
     #movieList = ['tt2713180']
     #nowShowing = createDatabase(movieList)
     #getAllCreditedCasts('tt2713180')
+    """--------------------------------------------------------"""
 
 
     print("Result generated in {:.2f} seconds".format(time.time()-startTime))

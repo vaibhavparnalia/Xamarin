@@ -6,4 +6,5 @@ fullcreditsExtn = "/fullcredits/"
 
 #Saves time
 parseBreaker_uncreditedCast = "Rest of cast listed alphabetically"
-parseBreaker_birthDate = "Contact Info:"
+parseBreaker_characterPage = "full_cast form-box"
+parseBreaker_birthDate = "name-pro-info"

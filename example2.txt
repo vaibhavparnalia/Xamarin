@@ -1,0 +1,29 @@
+Ran the script next day - the script queries 1 new movie in now showing
+
+55 movies currently running in Sandiego CA US
+
+Querying movie(55/55)# tt2180447
+  Querying credited casts not in cache..
+  Querying cast# nm4850976
+  Querying cast# nm4851573
+  Querying cast# nm1101792
+  Querying cast# nm0516532
+  Querying cast# nm4851835
+
+
+ 1. Interstellar (2014)
+    RunTime: 169 mins
+    ----------------------
+      skipping content
+    ----------------------
+
+Result generated in 12.63 seconds
+
+
+----------------------------------------------------------------
+
+Rerunnnung the script, if no new movies in now showing
+
+Result generated in 7.07 seconds
+Result generated in 6.77 seconds
+Result generated in 7.07 seconds
