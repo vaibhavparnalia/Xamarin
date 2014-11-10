@@ -2,6 +2,7 @@ from globals import *
 import datetime
 import urllib.request
 from html.parser import HTMLParser
+import time
 
 ##TODO
 #Check the HTML_cache before querying :)
@@ -79,7 +80,7 @@ def initDatabase(movieList):
 def convertDate(myDate):
     YYYY, MM, DD = (myDate.split("-"))
     YYYY, MM, DD = int(YYYY), int(MM), int(DD)
-    if MM>0 and DD>0:
+    if MM>0 and DD>0 and YYYY>0:
         return datetime.date(YYYY, MM, DD).strftime("%d %B %Y")
     else:
         if YYYY:
@@ -104,6 +105,20 @@ def getRunTime(runTime):
                 indexEnd = indexStart + runTime[indexStart:].index(char)
         return int(runTime[indexStart:indexEnd])
 
+def getCastAverageAge(castList):
+    totalAge = 0
+    castNum = 0
+    for cast in castList:
+        if cast[1]:
+            year = cast[1].split('-')[0]
+            if year:
+                if int(year) > 0:
+                    age = currentYear - int(year)
+                    #print("{}:{} year".format(cast[0], age))
+                    castNum += 1
+                    totalAge += age
+    return totalAge//castNum
+
 def printMovieInfoDetailed(nowShowing):
     print("\n")
     for counter, movie in enumerate(nowShowing):
@@ -122,32 +137,12 @@ def printMovieInfoDetailed(nowShowing):
         print("{}".format(genreStr))
         dateStr = convertDate(movie.releaseDate)
         print("    Date Released: {}".format(dateStr))
+        print("    Cast Average Age: {} years".format(getCastAverageAge(movie.cast)))
         print("    Cast List:")
+
         for cast in movie.cast:
             if cast[1]:
-                print("        {}: {}".format(cast[0], convertDate(cast[1])))
-    """
-    for i in range(0, len(nowShowing)):
-        if len(nowShowing) < 10:
-            print("{}. {}".format(i+1, nowShowing[i].title))
-        elif len(nowShowing) < 100:
-            print("{:2d}. {}".format(i+1, nowShowing[i].title))
-        else:
-            print("{:3d}. {}".format(i+1, nowShowing[i].title))
-        if nowShowing[i].runTime:
-            print("    RunTime: {} mins".format(nowShowing[i].runTime))
-        else:
-            print("    RunTime: N/A")
-        print("    Genre: ", end="")
-        genreStr = getGenreStr(nowShowing[i].genre)
-        print("{}".format(genreStr))
-        dateStr = convertDate(nowShowing[i].releaseDate)
-        print("    Date Released: {}".format(dateStr))
-        print("    Cast List:")
-        for cast in nowShowing[i].cast:
-            if cast[1]:
-                print("        {}: {}".format(cast[0], convertDate(cast[1])))
-                """
+                print("        {:<20s}: {:>10s}".format(cast[0], convertDate(cast[1])))
 
 def getCastInfo(nameID):
     imdb = "http://www.imdb.com"
@@ -247,10 +242,13 @@ def createDatabase(movieList):
     return nowShowing
 
 if __name__ == "__main__":
-    #movieList = getNowShowing()
-    #createDatabase(movieList)
+    startTime = time.time()
+    movieList = getNowShowing()
+    nowShowing = createDatabase(movieList)
+    print("Result generated in {:.2f} seconds".format(time.time()-startTime))
 
     """Testing small list of movies, no parsing nowShowingURL"""
-    movieList = ['tt2713180', 'tt0816692']
-    nowShowing = createDatabase(movieList)
+    #movieList = ['tt2713180', 'tt0816692']
+    #movieList = ['tt2713180']
+    #nowShowing = createDatabase(movieList)
     #getAllCreditedCasts('tt2713180')
