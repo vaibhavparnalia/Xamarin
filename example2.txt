@@ -22,8 +22,14 @@ Result generated in 12.63 seconds
 
 ----------------------------------------------------------------
 
-Rerunnnung the script, if no new movies in now showing
+Rerunnnung the script, with no new movies in now showing
 
 Result generated in 7.07 seconds
 Result generated in 6.77 seconds
 Result generated in 7.07 seconds
+
+
+----------------------------------------------------------------
+
+querying 60 movies has ~1600 unique cast
+156 MB of html cached
