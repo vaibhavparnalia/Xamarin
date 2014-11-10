@@ -11,9 +11,13 @@ Benchmark/movie:
   If movie is not on the filer, query takes about 30-40 seconds which includes querying about 30 credited casts.
   If the movie is on the filer, the result takes ~0.15 seconds to generate
 
+Changes in source(IMDb/..):
+	Important things are stored in global.py. Developer should put as many thing as possible here, for easy debug when the source data format changes.
+	There is no SOAP service used here, but if we use those, we should still have HTML parsing as backup and inform to upgrade the SOAP query
+
 TODO:
-  Using SOAP servies to get the celebrity data and also keep parsing IMDb HTML as secondary
-    Pros:
+	Using SOAP servies to get the celebrity data and also keep parsing IMDb HTML as secondary
+		Pros:
       Easy parsing
       More stable with change in website
       Maybe faster
