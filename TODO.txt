@@ -1,8 +1,0 @@
-# Using SOAP service from like http://prod-doc.rovicorp.com/mashery/index.php/V9.Common:Celebrity will be faster:
-	-skips the step of saving the HTML, parsing it
-	-helps to get the DOB/other info quickly with XML format returned
-	-have IMDB as secondary source when rovicorp is down
-
-# Saving the database
-	-save the cast/celebrity DOB as JSON.dumps(example dob) with imdb# as dictionary and build it incrementally
-	-skips the step of SOAP query/HTML parsing for each casts
