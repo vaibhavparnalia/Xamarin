@@ -1,11 +1,9 @@
-from globals import *
+import os
+import time
 import datetime
 import urllib.request
+from globals import *
 from html.parser import HTMLParser
-import time
-
-##TODO
-#Check the HTML_cache before querying :)
 
 class MyHTMLParser(HTMLParser):
     def __init__(self):
@@ -64,12 +62,16 @@ def filterMovieID(file):
                         movieID.append(line[indexStart:indexEnd])
     return movieID
     
+def cacheCheck(path, fileName):
+    #print(os.path.join(path, fileName))
+    if os.path.isfile(os.path.join(path, fileName)) : return True
+
 def getNowShowing():
     page_content = HTMLResponse(nowShowingURL)
-    
     with open("html_cache/now_showing.html", "wb") as file:
         file.write(page_content)
     file.close()
+
     return filterMovieID("html_cache/now_showing.html")
 
 def initDatabase(movieList):
@@ -105,19 +107,28 @@ def getRunTime(runTime):
                 indexEnd = indexStart + runTime[indexStart:].index(char)
         return int(runTime[indexStart:indexEnd])
 
-def getCastAverageAge(castList):
+def getCastAverageAge(castList, releaseDate):
     totalAge = 0
     castNum = 0
+    if releaseDate:
+        releaseYear = releaseDate.split("-")[0]
+        if len(releaseYear) == 4:
+            releaseYear = int(releaseYear)
+        else:
+            return 0
     for cast in castList:
         if cast[1]:
             year = cast[1].split('-')[0]
             if year:
                 if int(year) > 0:
-                    age = currentYear - int(year)
+                    age = releaseYear - int(year)
                     #print("{}:{} year".format(cast[0], age))
                     castNum += 1
                     totalAge += age
-    return totalAge//castNum
+    if castNum:
+        return totalAge//castNum
+    else:
+        return 0
 
 def printMovieInfoDetailed(nowShowing):
     print("\n")
@@ -137,9 +148,13 @@ def printMovieInfoDetailed(nowShowing):
         print("{}".format(genreStr))
         dateStr = convertDate(movie.releaseDate)
         print("    Date Released: {}".format(dateStr))
-        print("    Cast Average Age: {} years".format(getCastAverageAge(movie.cast)))
-        print("    Cast List:")
-
+        averageCastAge = getCastAverageAge(movie.cast, movie.releaseDate)
+        if averageCastAge:
+            print("    Cast Average Age(when released): {} years".format(averageCastAge))
+        else:
+            print("    Cast Average Age: N/A")
+        if len(movie.cast):
+            print("    Cast List:")
         for cast in movie.cast:
             if cast[1]:
                 print("        {:<20s}: {:>10s}".format(cast[0], convertDate(cast[1])))
@@ -147,13 +162,15 @@ def printMovieInfoDetailed(nowShowing):
 def getCastInfo(nameID):
     imdb = "http://www.imdb.com"
     #print("  Querying castID {}".format(nameID))
-    parser = MyHTMLParser()
-    page_content = HTMLResponse(imdb + "/name/" + nameID + "/")
-    with open("html_cache/"+nameID+".html", "wb") as file:
-        file.write(page_content)
-    file.close()
+    
+    if not cacheCheck(os.path.join("html_cache", "cast"), str(nameID)+str(".html")):
+        page_content = HTMLResponse(imdb + "/name/" + nameID + "/")
+        with open("html_cache/cast/"+nameID+".html", "wb") as file:
+            file.write(page_content)
+        file.close()
 
-    with open("html_cache/"+nameID+".html", "r", encoding='utf8') as file:
+    with open("html_cache/cast/"+nameID+".html", "r", encoding='utf8') as file:
+        parser = MyHTMLParser()
         for line in iter(file):
             if "og:title" in line:
                 parser.feed(line)
@@ -172,14 +189,16 @@ def getCastInfo(nameID):
 
 def getAllCreditedCasts(movieID):
     #print(moviePageURL+movieID+fullcreditsExtn)
-    print("  Querying all credited casts..please wait..")
     imdb = "http://www.imdb.com"
-    page_content = HTMLResponse(moviePageURL+movieID+fullcreditsExtn)
     cast = []
 
-    with open("html_cache/"+movieID+"_full_credits.html", "wb") as file:
-        file.write(page_content)
-    file.close()
+    if not cacheCheck("html_cache", str(movieID)+str("_full_credits.html")):
+        print("  Querying all credited casts..")
+        page_content = HTMLResponse(moviePageURL+movieID+fullcreditsExtn)
+
+        with open("html_cache/"+movieID+"_full_credits.html", "wb") as file:
+            file.write(page_content)
+        file.close()
 
     with open("html_cache/"+movieID+"_full_credits.html", "r", encoding='utf8') as file:
         parser = MyHTMLParser()
@@ -189,8 +208,6 @@ def getAllCreditedCasts(movieID):
                 #I prefer to do this in single line
                 nameID = (line[line.index("name")+5:line.index("name")+5+line[line.index("name")+5:].index("/")])
                 cast.append(getCastInfo(nameID))
-                #age = getCastInfo(nameID)
-                #print(name, age)
             elif parseBreaker_uncreditedCast in line:
                 break
     return cast
@@ -200,12 +217,15 @@ def movie_setParameters(nowShowing):
     #print([movie.id for movie in nowShowing])
 
     for movie in nowShowing:
-        print("Querying movie# {}".format(movie.id))
-        page_content = HTMLResponse(moviePageURL+movie.id)
+        if not cacheCheck("html_cache", str(movie.id)+str(".html")):
+            print("Querying movie# {}".format(movie.id))
+            page_content = HTMLResponse(moviePageURL+movie.id)
 
-        with open("html_cache/"+movie.id+".html", "wb") as file:
-            file.write(page_content)
-        file.close()
+            with open("html_cache/"+movie.id+".html", "wb") as file:
+                file.write(page_content)
+            file.close()
+        else:
+            print("skipped")
 
         with open("html_cache/"+movie.id+".html", "r", encoding='utf8') as file:
             parser = MyHTMLParser()
@@ -242,13 +262,20 @@ def createDatabase(movieList):
     return nowShowing
 
 if __name__ == "__main__":
+    if not os.path.exists("html_cache"):
+        os.mkdir("html_cache")
+    if not os.path.exists("html_cache/cast"):
+        os.mkdir("html_cache/cast")
     startTime = time.time()
     movieList = getNowShowing()
     nowShowing = createDatabase(movieList)
-    print("Result generated in {:.2f} seconds".format(time.time()-startTime))
+    
 
     """Testing small list of movies, no parsing nowShowingURL"""
     #movieList = ['tt2713180', 'tt0816692']
     #movieList = ['tt2713180']
     #nowShowing = createDatabase(movieList)
     #getAllCreditedCasts('tt2713180')
+
+
+    print("Result generated in {:.2f} seconds".format(time.time()-startTime))
